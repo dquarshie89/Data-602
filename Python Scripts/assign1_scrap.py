@@ -11,8 +11,11 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 equities = ('AAPL','AMZN','A')
+
 menu = ['Trade','Show Blotter','Show P/L','Quit']
+
 blotter = pd.DataFrame(columns=[
+        'Action',
         'Company',
         'Price per Share',
         'Shares',
@@ -39,8 +42,19 @@ def buy(symbol):
     price_box = soup.find('span', attrs={'class':"priceText__1853e8a5"})
     price = price_box.text
     price = price.replace(',', '')
-    blotter.loc[tradenum] = ([name, float(price), int(shares), round(float(price)*float(shares),2)])
-    #blotter.loc[i] = [name, float(price), int(shares), round(float(price)*float(shares),2)]
+    blotter.loc[tradenum] = (['Buy', name, float(price), int(shares), round(float(price)*float(shares),2)])
+
+def sell(symbol):
+    quote_page = 'https://www.bloomberg.com/quote/'+ symbol +':US'
+    page = req.urlopen(quote_page)
+    soup = BeautifulSoup(page, 'html.parser')
+    name_box = soup.find('h1', attrs={'class':'companyName__99a4824b'})
+    name = name_box.text.strip() 
+    price_box = soup.find('span', attrs={'class':"priceText__1853e8a5"})
+    price = price_box.text
+    price = price.replace(',', '')
+    blotter.loc[tradenum] = (['Sell', name, float(price), int(shares), round(float(price)*float(shares),2)])
+
    
 tradenum=0
 
@@ -58,14 +72,26 @@ while done:
             Trade(equities)
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
-            tradenum += 1
-            buy(symbol)
-            #blotter.loc[-1] = [buy(symbol)]  # adding a row
-            print(blotter)
-            
-        #print('Buy' + buy_shares + 'of' + symbol + 'for' + price + '?')
+            buy_confirm = input('\n Buy %s shares of %s? (Y/N): ' % (shares, symbol))
+            if buy_confirm == 'Y':
+                tradenum += 1
+                buy(symbol)
+                print(blotter)
+        if trade == 'Sell':
+            print('\nStocks: ')
+            Trade(equities)
+            symbol = input('\nPick your stock symbol: ')
+            shares = int(input('\nEnter Number of shares: '))
+            sell_confirm = input('\n Sell %s shares of %s? (Y/N): ' % (shares, symbol))
+            if sell_confirm == 'Y':
+                tradenum += 1
+                sell(symbol)
+                print(blotter)
+                
         
-       
+        
+    elif selected == 3:
+        print(blotter)
        
     elif selected == 4:
         print('\nThanks')
