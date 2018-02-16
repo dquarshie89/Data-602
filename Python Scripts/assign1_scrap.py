@@ -8,27 +8,40 @@ Created on Thu Feb  8 19:55:41 2018
 
 import urllib.request as req
 import pandas as pd
+import datetime as dt
 from bs4 import BeautifulSoup
 
-equities = ('AAPL','AMZN','A')
+now = dt.datetime.now()
+
+equities = ('AAPL','AMZN','A','FB')
 
 menu = ['Trade','Show Blotter','Show P/L','Quit']
 
 blotter = pd.DataFrame(columns=[
         'Action',
-        'Company',
-        'Price per Share',
+        'Ticker',
         'Shares',
-        'Total Equity']
+        'Price per Share',
+        'Trade Timestap',
+        'Money In/Out']
         )
 
+pl = pd.DataFrame(columns=[
+        'Ticker',
+        'Position',
+        'Current Market Price',
+        'VWAP',
+        'UPL',
+        'RPL'
+        ])
+
 def display_menu(menu):
+    print('\nMain Menu\n')
     for m in menu:
         print(str(menu.index(m) +1) + " - " + m)
     #print('Choose an option:')
 
 def Trade(equities):
-    #for e in equities:
     print('\n'.join(equities))
         #print(str(equities.index(e) +1) + " - " + e)
     #print('Choose an option:')  
@@ -42,7 +55,7 @@ def buy(symbol):
     price_box = soup.find('span', attrs={'class':"priceText__1853e8a5"})
     price = price_box.text
     price = price.replace(',', '')
-    blotter.loc[tradenum] = (['Buy', name, float(price), int(shares), round(float(price)*float(shares),2)])
+    blotter.loc[tradenum] = (['Buy', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
 
 def sell(symbol):
     quote_page = 'https://www.bloomberg.com/quote/'+ symbol +':US'
@@ -53,7 +66,7 @@ def sell(symbol):
     price_box = soup.find('span', attrs={'class':"priceText__1853e8a5"})
     price = price_box.text
     price = price.replace(',', '')
-    blotter.loc[tradenum] = (['Sell', name, float(price), int(shares), round(float(price)*float(shares),2)])
+    blotter.loc[tradenum] = (['Sell', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
 
    
 tradenum=0
@@ -72,11 +85,14 @@ while done:
             Trade(equities)
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
-            buy_confirm = input('\n Buy %s shares of %s? (Y/N): ' % (shares, symbol))
+            buy_confirm = input('\nBuy %s shares of %s? (Y/N): ' % (shares, symbol))
             if buy_confirm == 'Y':
                 tradenum += 1
                 buy(symbol)
+                print('\nBlotter\n')
                 print(blotter)
+            if buy_confirm == 'N':
+                display_menu(menu)
         if trade == 'Sell':
             print('\nStocks: ')
             Trade(equities)
@@ -86,12 +102,20 @@ while done:
             if sell_confirm == 'Y':
                 tradenum += 1
                 sell(symbol)
+                print('\nBlotter\n')
                 print(blotter)
-                
-        
-        
+            if sell_confirm == 'N':
+                display_menu(menu)
+    
+    elif selected == 2:
+        print('\nBlotter\n')
+        print(blotter)             
+   
     elif selected == 3:
-        print(blotter)
+        print('\nP/L\n')
+        blotter['item'].count()
+        
+  
        
     elif selected == 4:
         print('\nThanks')
