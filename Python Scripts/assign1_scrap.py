@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Feb  8 19:55:41 2018
-
 @author: admin
 """
 
@@ -10,6 +9,8 @@ import urllib.request as req
 import pandas as pd
 import datetime as dt
 from bs4 import BeautifulSoup
+
+funds = 1000
 
 now = dt.datetime.now()
 
@@ -113,7 +114,8 @@ while done:
    
     elif selected == 3:
         print('\nP/L\n')
-        blotter['item'].count()
+        pl = blotter.groupby(['Ticker','Action'])[['Money In/Out']].sum()
+        print(pl)
         
   
        
