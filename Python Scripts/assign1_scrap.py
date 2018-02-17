@@ -48,28 +48,35 @@ def Trade(equities):
     #print('Choose an option:')  
 
 def buy(symbol):
-    quote_page = 'https://www.bloomberg.com/quote/'+ symbol +':US'
+    quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
     soup = BeautifulSoup(page, 'html.parser')
-    name_box = soup.find('h1', attrs={'class':'companyName__99a4824b'})
+    name_box = soup.find('h1', attrs={'class':'D(ib)'})
     name = name_box.text.strip() 
-    price_box = soup.find('span', attrs={'class':"priceText__1853e8a5"})
+    price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
     price = price_box.text
     price = price.replace(',', '')
+    price = price.split('x', 1)[0]
     blotter.loc[tradenum] = (['Buy', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
 
 def sell(symbol):
-    quote_page = 'https://www.bloomberg.com/quote/'+ symbol +':US'
+    quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
     soup = BeautifulSoup(page, 'html.parser')
-    name_box = soup.find('h1', attrs={'class':'companyName__99a4824b'})
+    name_box = soup.find('h1', attrs={'class':'D(ib)'})
     name = name_box.text.strip() 
-    price_box = soup.find('span', attrs={'class':"priceText__1853e8a5"})
+    price_box = soup.find('td', attrs={'data-test': 'BID-value'})
     price = price_box.text
     price = price.replace(',', '')
+    price = price.split('x', 1)[0]
     blotter.loc[tradenum] = (['Sell', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
 
-   
+
+def pl_buy(symbol):
+    pl = blotter.groupby(['Ticker','Action'])[['Money In/Out']].sum()
+    print(pl)
+    
+ 
 tradenum=0
 
 done = True
@@ -114,8 +121,7 @@ while done:
    
     elif selected == 3:
         print('\nP/L\n')
-        pl = blotter.groupby(['Ticker','Action'])[['Money In/Out']].sum()
-        print(pl)
+        pl_buy(symbol)
         
   
        
