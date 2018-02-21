@@ -28,16 +28,17 @@ blotter = pd.DataFrame(columns=[
         'Trade Timestap',
         'Money In/Out']
         )
-'''
+
 pl = pd.DataFrame(columns=[
         'Ticker',
         'Current Market Price',
         'Position',
         'VWAP',
         'UPL',
-        'RPL'
+        'RPL',
+        'As Of'
         ])
-'''
+
 
 def display_menu(menu):
     print('\nMain Menu\n')
@@ -83,6 +84,7 @@ def wavg(group, avg_name, weight_name):
         return d.mean()
 
 def pl_buy(symbol):
+    global pl
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
     soup = BeautifulSoup(page, 'html.parser')
@@ -111,18 +113,25 @@ def pl_buy(symbol):
     
     url = float(pw['Market Price'])*float(pw['Position'])
     
-    url_profit = pd.DataFrame([[symbol,url,'0']])
-    url_profit.columns = ['Ticker', 'URL','RPL']
+    url_profit = pd.DataFrame([[symbol,url,'0',pd.to_datetime('now')]])
+    url_profit.columns = ['Ticker', 'URL','RPL','As Of']
     
     pl_buy = pd.merge(pw, url_profit, on='Ticker')
-
+     
+    #pl = pl_buy.append(pl_buy)
     pl = np.vstack((pl,pl_buy)) 
     pl = df(pl)
-    pl.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
+    pl.columns=['Ticker','Current Price','Position','VWAP','URL','RPL','As Of']
     
+    pl = pl.sort_values(by='As Of')
+    pl = pl.drop_duplicates('Ticker', keep='last').values
+    pl = df(pl)
+    pl.columns=['Ticker','Current Price','Position','VWAP','URL','RPL','As Of']
  
 tradenum=0
 plnum = 0
+
+
 
 done = True
 
@@ -168,6 +177,7 @@ while done:
    
     elif selected == 3:
         print('\nP/L\n')
+        
         print(pl)
         
         
