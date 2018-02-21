@@ -7,6 +7,7 @@ Created on Thu Feb  8 19:55:41 2018
 
 import urllib.request as req
 import pandas as pd
+from pandas import DataFrame as df
 import numpy as np
 import datetime as dt
 from bs4 import BeautifulSoup
@@ -27,7 +28,7 @@ blotter = pd.DataFrame(columns=[
         'Trade Timestap',
         'Money In/Out']
         )
-
+'''
 pl = pd.DataFrame(columns=[
         'Ticker',
         'Current Market Price',
@@ -36,7 +37,7 @@ pl = pd.DataFrame(columns=[
         'UPL',
         'RPL'
         ])
-
+'''
 
 def display_menu(menu):
     print('\nMain Menu\n')
@@ -73,6 +74,14 @@ def sell(symbol):
     price = price.split('x', 1)[0]
     blotter.loc[tradenum] = (['Sell', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
 
+def wavg(group, avg_name, weight_name):
+    d = group[avg_name]
+    w = group[weight_name]
+    try:
+        return (d * w).sum() / w.sum()
+    except ZeroDivisionError:
+        return d.mean()
+
 def pl_buy(symbol):
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
@@ -88,26 +97,28 @@ def pl_buy(symbol):
     price_buy.columns = ['Ticker', 'Market Price']
     
     position = blotter.groupby(['Ticker'])[['Shares']].sum() # use as dataframe and join to vwap 
-    #position = pd.DataFrame(position).reset_index()
-    #position.columns = ['Ticker', 'Position']
+    position = pd.DataFrame(position).reset_index()
+    position.columns = ['Ticker', 'Position']
     
-    wap = blotter.groupby(['Ticker']).apply(lambda x: np.average(x[['Price per Share']], weights=x[['Shares']]))
+    wap = blotter.groupby('Ticker').apply(wavg, 'Price per Share', 'Shares')
+    #wap = blotter.groupby(['Ticker']).apply(lambda x: np.average(x[['Price per Share']], weights=x[['Shares']]))
     wap = pd.DataFrame(wap).reset_index()
     wap.columns = ['Ticker', 'WAP']
     
-    #price_position = pd.merge(price_buy, position, on='Ticker')
+    price_position = pd.merge(price_buy, position, on='Ticker')
     
-    #pw = pd.merge(price_position, wap, on='Ticker')
+    pw = pd.merge(price_position, wap, on='Ticker')
     
     url = float(pw['Market Price'])*float(pw['Position'])
     
-    #url_profit = pd.DataFrame([[symbol,url,'0']])
-    #url_profit.columns = ['Ticker', 'URL','RPL']
+    url_profit = pd.DataFrame([[symbol,url,'0']])
+    url_profit.columns = ['Ticker', 'URL','RPL']
     
-    #pl_buy = pd.merge(pw, url_profit, on='Ticker')
-    
-    pl.loc[plnum] = (symbol,price,position,wap['WAP'],url,'0')
-    
+    pl_buy = pd.merge(pw, url_profit, on='Ticker')
+
+    pl = np.vstack((pl,pl_buy)) 
+    pl = df(pl)
+    pl.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
     
  
 tradenum=0
