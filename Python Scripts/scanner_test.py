@@ -1,12 +1,13 @@
 import urllib.request as req
 import pandas as pd
+from pandas import DataFrame as df
 import numpy as np
 import datetime as dt
 from bs4 import BeautifulSoup
 
 
-pl = pd.DataFrame(columns=['Ticker','Current Price','Position','VWAP','URL','RPL'])
-
+pl = pd.DataFrame()
+#columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
 #pl = pl.set_index('Ticker')
 '''
 pl = []
@@ -35,41 +36,47 @@ price = price_box.text
 price = price.replace(',', '')
 price = price.split('x', 1)[0]
 
-
+#price_buy = pd.DataFrame(columns=['Ticker','Current Price'])
+#price_buy = price_buy.append(price_buy,index=['Ticker','Current Price'], ignore_index=True)
 price_buy = pd.DataFrame([[symbol,price]])
 #price_buy = price_buy.reset_index(level='Ticker')
-price_buy = pd.DataFrame(price_buy).reset_index(drop=True) 
+#price_buy = pd.DataFrame(price_buy).reset_index(drop=True) 
 price_buy.columns = ['Ticker', 'Current Price']
 
-'''
+
 position = blotter.groupby(['Ticker'])[['Shares']].sum() # use as dataframe and join to vwap 
 position = pd.DataFrame(position).reset_index()
 position.columns = ['Ticker', 'Position']
-
 wap = blotter.groupby('Ticker').apply(wavg, 'Price per Share', 'Shares')
 #wap = blotter.groupby(['Ticker']).apply(lambda x: np.average(x[['Price per Share']], weights=x[['Shares']]))
 wap = pd.DataFrame(wap).reset_index()
 wap.columns = ['Ticker', 'VWAP']
-
 price_position = pd.merge(price_buy, position, on='Ticker')
-
 pw = pd.merge(price_position, wap, on='Ticker')
-
 url = float(pw['Current Price'])*float(pw['Position'])
-
 url_profit = pd.DataFrame([[symbol,url,'0']])
 url_profit.columns = ['Ticker', 'URL','RPL']
-
 plb = pd.merge(pw, url_profit, on='Ticker')
-#plb = pd.DataFrame(plb).reset_index()
-plb.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
+#plb = pd.DataFrame(plb).reset_index(drop=True)
+#plb.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
 '''
+ticker = plb['Ticker'].values
+market = plb['Current Price'].values
+pos = plb['Position'].values
+vwap = plb['VWAP'].values
+unreal = plb['URL'].values
+real = plb['RPL'].values
+'''
+pl = np.vstack((pl,plb)) 
+pl = df(pl)
+pl.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
 #plb = plb.set_index('Ticker')
 #pl = pd.concat([pl, plb], axis=0)
-print(price_buy)
+#print(plb)
+print(plb)
 #print(pl)
 #print(plb)
-#pl.loc[1] = ([plb])
+
 
 #pl = ([plb])
 # pd.DataFrame([[k[0], k[1], v.split()[1]] for k,v in d.items()], columns=['id','Name','Value'])
