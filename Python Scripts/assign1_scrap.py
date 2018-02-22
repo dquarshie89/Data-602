@@ -206,17 +206,20 @@ def pl_tot(symbol):
     price = price.replace(',', '')
     price = price.split('x', 1)[0]
     
-    plt.loc[plnum] = ([[symbol, 
-           price, 
-           plb['Position']-pls['Position'], 
-           plb['VWAP'], 
-           plb['URL']-pls['RPL'],
-           pls['RPL']
-           ]])
-    #plt = df(plt)
-    #plt.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
-
-
+    if (symbol in plb[['Ticker']].values) == True and (symbol in pls[['Ticker']].values) ==True:
+        plt = df([[symbol, 
+                   price, 
+                   float(plb['Position'])-float(pls['Position']),
+                   float(plb['VWAP']), 
+                   float(plb['URL'])-float(pls['RPL']),
+                   float(pls['RPL'])
+                   ]])
+        plt.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
+        
+    elif (symbol in pls[['Ticker']].values) ==False:
+        plt = plb[['Ticker','Current Price', 'Position', 'VWAP', 'URL', 'RPL']]
+ 
+ 
 done = True
 
 while done:
@@ -262,8 +265,6 @@ while done:
     elif selected == 3:
         plnum=+1
         print('\nP/L\n')
-        #print(plb)
-        #print(pls)
         pl_tot(symbol)
         print(plt)
         
