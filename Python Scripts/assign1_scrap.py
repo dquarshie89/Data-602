@@ -237,9 +237,12 @@ while done:
             buy_confirm = input('\nBuy %s shares of %s? (Y/N): ' % (shares, symbol))
             if buy_confirm == 'Y':
                 tradenum += 1
+                cash == cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 buy(symbol)
                 print('\nBlotter\n')
                 print(blotter)
+                print('\nRemaining Cash:\n')
+                print(cash)
                 pl_buy(symbol)
             if buy_confirm == 'N':
                 display_menu(menu)
