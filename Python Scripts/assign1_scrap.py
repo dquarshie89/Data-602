@@ -13,6 +13,7 @@ import datetime as dt
 from bs4 import BeautifulSoup
 
 tradenum=0
+plnum =0 
 cash = 10000000
 
 now = dt.datetime.now()
@@ -40,7 +41,7 @@ plb = pd.DataFrame(columns=[
         'As Of'
         ])
 
-plt = pd.DataFrame(columns=[
+pls = pd.DataFrame(columns=[
         'Ticker',
         'Current Market Price',
         'Position',
@@ -51,14 +52,13 @@ plt = pd.DataFrame(columns=[
         ])
 
 
-pls = pd.DataFrame(columns=[
+plt = pd.DataFrame(columns=[
         'Ticker',
         'Current Market Price',
         'Position',
         'VWAP',
         'UPL',
         'RPL',
-        'As Of'
         ])
 
 def display_menu(menu):
@@ -206,13 +206,15 @@ def pl_tot(symbol):
     price = price.replace(',', '')
     price = price.split('x', 1)[0]
     
-    plt = pd.DataFrame([[symbol, 
+    plt.loc[plnum] = ([[symbol, 
            price, 
            plb['Position']-pls['Position'], 
            plb['VWAP'], 
            plb['URL']-pls['RPL'],
            pls['RPL']
            ]])
+    #plt = df(plt)
+    #plt.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
 
 
 done = True
@@ -258,9 +260,10 @@ while done:
         print(blotter)             
    
     elif selected == 3:
+        plnum=+1
         print('\nP/L\n')
-        print(plb)
-        print(pls)
+        #print(plb)
+        #print(pls)
         pl_tot(symbol)
         print(plt)
         
