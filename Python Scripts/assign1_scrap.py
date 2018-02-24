@@ -72,6 +72,17 @@ def Trade(equities):
         #print(str(equities.index(e) +1) + " - " + e)
     #print('Choose an option:')  
 
+def buy_check(symbol):
+    quote_page = 'https://finance.yahoo.com/quote/'+ symbol
+    page = req.urlopen(quote_page)
+    soup = BeautifulSoup(page, 'html.parser')
+    name_box = soup.find('h1', attrs={'class':'D(ib)'})
+    name = name_box.text.strip() 
+    price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
+    price = price_box.text
+    price = price.replace(',', '')
+    price = price.split('x', 1)[0]
+
 def buy(symbol):
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
@@ -237,8 +248,8 @@ while done:
             buy_confirm = input('\nBuy %s shares of %s? (Y/N): ' % (shares, symbol))
             if buy_confirm == 'Y':
                 tradenum += 1
-                cash == cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 buy(symbol)
+                cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
@@ -252,12 +263,18 @@ while done:
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
             sell_confirm = input('\nSell %s shares of %s? (Y/N): ' % (shares, symbol))
-            if sell_confirm == 'Y':
+            if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
                 tradenum += 1
                 sell(symbol)
+                cash = cash + blotter[blotter['Action'] == 'Sell']['Money In/Out'].sum()
                 print('\nBlotter\n')
                 print(blotter)
+                print('\nRemaining Cash:\n')
+                print(cash)
                 pl_sell(symbol)
+            if (sell_confirm == 'Y' and (symbol in plt[['Ticker']].values)==False):
+                print('\nThere is no %s to sell\n' % (symbol))
+                display_menu
             if sell_confirm == 'N':
                 display_menu(menu)
     
