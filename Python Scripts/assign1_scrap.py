@@ -255,7 +255,7 @@ while done:
             shares = int(input('\nEnter Number of shares: '))
             buy_check(symbol)
             total_price = float(price)*float(shares)
-            buy_confirm = input('\nBuy %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, total_price))
+            buy_confirm = input('\nBuy %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, round(total_price,2)))
             if buy_confirm == 'Y' and total_price > cash:
                 print('\nNot enough money to buy %s \n' %(symbol))
                 print('\nTotal Cost: ')
@@ -280,7 +280,7 @@ while done:
             shares = int(input('\nEnter Number of shares: '))
             buy_check(symbol)
             total_price = float(price)*float(shares)
-            sell_confirm = input('\nSell %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, total_price))
+            sell_confirm = input('\nSell %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, round(total_price,2)))
             if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
                 tradenum += 1
                 sell(symbol)
