@@ -18,7 +18,7 @@ cash = 10000000
 
 now = dt.datetime.now()
 
-equities = ('AAPL','AMZN','A','FB')
+equities = ('AAPL','AMZN','INTC','MSFT','SNAP')
 
 menu = ['Trade','Show Blotter','Show P/L','Quit']
 
@@ -65,12 +65,9 @@ def display_menu(menu):
     print('\nMain Menu\n')
     for m in menu:
         print(str(menu.index(m) +1) + " - " + m)
-    #print('Choose an option:')
-
+    
 def Trade(equities):
     print('\n'.join(equities))
-        #print(str(equities.index(e) +1) + " - " + e)
-    #print('Choose an option:')  
 
 def buy_check(symbol):
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
@@ -79,6 +76,17 @@ def buy_check(symbol):
     name_box = soup.find('h1', attrs={'class':'D(ib)'})
     name = name_box.text.strip() 
     price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
+    price = price_box.text
+    price = price.replace(',', '')
+    price = price.split('x', 1)[0]
+
+def sell_check(symbol):
+    quote_page = 'https://finance.yahoo.com/quote/'+ symbol
+    page = req.urlopen(quote_page)
+    soup = BeautifulSoup(page, 'html.parser')
+    name_box = soup.find('h1', attrs={'class':'D(ib)'})
+    name = name_box.text.strip() 
+    price_box = soup.find('td', attrs={'data-test': 'BID-value'})
     price = price_box.text
     price = price.replace(',', '')
     price = price.split('x', 1)[0]
@@ -245,8 +253,16 @@ while done:
             Trade(equities)
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
-            buy_confirm = input('\nBuy %s shares of %s? (Y/N): ' % (shares, symbol))
-            if buy_confirm == 'Y':
+            buy_check(symbol)
+            total_price = float(price)*float(shares)
+            buy_confirm = input('\nBuy %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, total_price))
+            if buy_confirm == 'Y' and total_price > cash:
+                print('\nNot enough money to buy %s \n' %(symbol))
+                print('\nTotal Cost: ')
+                print(total_price)
+                print('\nRemaining Cash: ')
+                print(cash)
+            if buy_confirm == 'Y' and total_price <= cash:
                 tradenum += 1
                 buy(symbol)
                 cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
@@ -256,13 +272,15 @@ while done:
                 print(cash)
                 pl_buy(symbol)
             if buy_confirm == 'N':
-                display_menu(menu)
+                print('\nDid not buy %s' %(symbol))
         elif trade == 'Sell':
             print('\nStocks: ')
             Trade(equities)
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
-            sell_confirm = input('\nSell %s shares of %s? (Y/N): ' % (shares, symbol))
+            buy_check(symbol)
+            total_price = float(price)*float(shares)
+            sell_confirm = input('\nSell %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, total_price))
             if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
                 tradenum += 1
                 sell(symbol)
@@ -276,7 +294,7 @@ while done:
                 print('\nThere is no %s to sell\n' % (symbol))
                 display_menu
             if sell_confirm == 'N':
-                display_menu(menu)
+                print('\nDid not sell %s' %(symbol))
     
     elif selected == 2:
         print('\nBlotter\n')
@@ -288,10 +306,6 @@ while done:
         pl_tot(symbol)
         print(plt)
         
-        
-        
-  
-       
     elif selected == 4:
         print('\nThanks')
         done = False
