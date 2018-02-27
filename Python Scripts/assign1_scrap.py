@@ -79,6 +79,7 @@ def buy_check(symbol):
     price = price_box.text
     price = price.replace(',', '')
     price = price.split('x', 1)[0]
+    return price
 
 def sell_check(symbol):
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
@@ -253,7 +254,13 @@ while done:
             Trade(equities)
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
-            buy_check(symbol)
+            quote_page = 'https://finance.yahoo.com/quote/'+ symbol
+            page = req.urlopen(quote_page)
+            soup = BeautifulSoup(page, 'html.parser')
+            price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
+            price = price_box.text
+            price = price.replace(',', '')
+            price = price.split('x', 1)[0]
             total_price = float(price)*float(shares)
             buy_confirm = input('\nBuy %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, round(total_price,2)))
             if buy_confirm == 'Y' and total_price > cash:
@@ -278,7 +285,13 @@ while done:
             Trade(equities)
             symbol = input('\nPick your stock symbol: ')
             shares = int(input('\nEnter Number of shares: '))
-            buy_check(symbol)
+            quote_page = 'https://finance.yahoo.com/quote/'+ symbol
+            page = req.urlopen(quote_page)
+            soup = BeautifulSoup(page, 'html.parser')
+            price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
+            price = price_box.text
+            price = price.replace(',', '')
+            price = price.split('x', 1)[0]
             total_price = float(price)*float(shares)
             sell_confirm = input('\nSell %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, round(total_price,2)))
             if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
@@ -290,9 +303,8 @@ while done:
                 print('\nRemaining Cash:\n')
                 print(cash)
                 pl_sell(symbol)
-            if (sell_confirm == 'Y' and (symbol in plt[['Ticker']].values)==False):
+            if sell_confirm == 'Y' and (symbol in plb[['Ticker']].values)==False:
                 print('\nThere is no %s to sell\n' % (symbol))
-                display_menu
             if sell_confirm == 'N':
                 print('\nDid not sell %s' %(symbol))
     
@@ -301,10 +313,13 @@ while done:
         print(blotter)             
    
     elif selected == 3:
-        plnum=+1
-        print('\nP/L\n')
-        pl_tot(symbol)
-        print(plt)
+        if len(plt) == 0:
+            print('\nNo P and L yet\n')
+        if len(plt) > 0:
+            plnum=+1
+            print('\nP/L\n')
+            pl_tot(symbol)
+            print(plt)
         
     elif selected == 4:
         print('\nThanks')
