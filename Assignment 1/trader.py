@@ -5,12 +5,15 @@ Created on Thu Feb  8 19:55:41 2018
 @author: admin
 """
 
+from flask import Flask
 import urllib.request as req
 import pandas as pd
 from pandas import DataFrame as df
 import numpy as np
 import datetime as dt
 from bs4 import BeautifulSoup
+
+app = Flask(__name__)
 
 tradenum=0
 plnum =0 
@@ -327,4 +330,6 @@ while done:
         
     elif selected >4 or selected<1:
         print('\nPlease enter a valid choice')
-   
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0') # host='0.0.0.0' needed for docker
