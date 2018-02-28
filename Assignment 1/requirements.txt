@@ -1,0 +1,6 @@
+Flask
+urllib.request 
+pandas
+numpy
+datetime
+BeautifulSoup
