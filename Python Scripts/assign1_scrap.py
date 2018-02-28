@@ -5,12 +5,15 @@ Created on Thu Feb  8 19:55:41 2018
 @author: admin
 """
 
+from flask import Flask
 import urllib.request as req
 import pandas as pd
 from pandas import DataFrame as df
 import numpy as np
 import datetime as dt
 from bs4 import BeautifulSoup
+
+app = Flask(__name__)
 
 tradenum=0
 plnum =0 
@@ -69,52 +72,40 @@ def display_menu(menu):
 def Trade(equities):
     print('\n'.join(equities))
 
-def buy_check(symbol):
+def price_check(symbol):
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
     soup = BeautifulSoup(page, 'html.parser')
     name_box = soup.find('h1', attrs={'class':'D(ib)'})
     name = name_box.text.strip() 
-    price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
-    price = price_box.text
-    price = price.replace(',', '')
-    price = price.split('x', 1)[0]
-    return price
+    buy_box = soup.find('td', attrs={'data-test': 'ASK-value'})
+    buy = buy_box.text
+    buy = buy.replace(',', '')
+    buy = buy.split('x', 1)[0]
+    sell_box = soup.find('td', attrs={'data-test': 'BID-value'})
+    sell = sell_box.text
+    sell = sell.replace(',', '')
+    sell = sell.split('x', 1)[0]
+    return buy, sell
 
-def sell_check(symbol):
+def get_quote(symbol):
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
     page = req.urlopen(quote_page)
     soup = BeautifulSoup(page, 'html.parser')
     name_box = soup.find('h1', attrs={'class':'D(ib)'})
     name = name_box.text.strip() 
-    price_box = soup.find('td', attrs={'data-test': 'BID-value'})
-    price = price_box.text
-    price = price.replace(',', '')
-    price = price.split('x', 1)[0]
-
-def buy(symbol):
-    quote_page = 'https://finance.yahoo.com/quote/'+ symbol
-    page = req.urlopen(quote_page)
-    soup = BeautifulSoup(page, 'html.parser')
-    name_box = soup.find('h1', attrs={'class':'D(ib)'})
-    name = name_box.text.strip() 
-    price_box = soup.find('td', attrs={'data-test': 'ASK-value'})
-    price = price_box.text
-    price = price.replace(',', '')
-    price = price.split('x', 1)[0]
-    blotter.loc[tradenum] = (['Buy', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
-
-def sell(symbol):
-    quote_page = 'https://finance.yahoo.com/quote/'+ symbol
-    page = req.urlopen(quote_page)
-    soup = BeautifulSoup(page, 'html.parser')
-    name_box = soup.find('h1', attrs={'class':'D(ib)'})
-    name = name_box.text.strip() 
-    price_box = soup.find('td', attrs={'data-test': 'BID-value'})
-    price = price_box.text
-    price = price.replace(',', '')
-    price = price.split('x', 1)[0]
-    blotter.loc[tradenum] = (['Sell', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
+    buy_box = soup.find('td', attrs={'data-test': 'ASK-value'})
+    buy = buy_box.text
+    buy = buy.replace(',', '')
+    buy = buy.split('x', 1)[0]
+    sell_box = soup.find('td', attrs={'data-test': 'BID-value'})
+    sell = sell_box.text
+    sell = sell.replace(',', '')
+    sell = sell.split('x', 1)[0]
+    if trade =='Buy':
+        blotter.loc[tradenum] = (['Buy', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
+    if trade == 'Sell':
+        blotter.loc[tradenum] = (['Sell', symbol, int(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
 
 def wavg(group, avg_name, weight_name):
     d = group[avg_name]
@@ -236,7 +227,7 @@ def pl_tot(symbol):
                    ]])
         plt.columns=['Ticker','Current Price','Position','VWAP','URL','RPL']
         
-    elif (symbol in pls[['Ticker']].values) ==False:
+    elif (symbol in pls[['Ticker']].values) ==False and (symbol in plb[['Ticker']].values) ==True:
         plt = plb[['Ticker','Current Price', 'Position', 'VWAP', 'URL', 'RPL']]
  
  
@@ -271,13 +262,14 @@ while done:
                 print(cash)
             if buy_confirm == 'Y' and total_price <= cash:
                 tradenum += 1
-                buy(symbol)
+                get_quote(symbol)
                 cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
                 print(cash)
                 pl_buy(symbol)
+                pl_tot(symbol)
             if buy_confirm == 'N':
                 print('\nDid not buy %s' %(symbol))
         elif trade == 'Sell':
@@ -296,7 +288,7 @@ while done:
             sell_confirm = input('\nSell %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, round(total_price,2)))
             if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
                 tradenum += 1
-                sell(symbol)
+                get_quote(symbol)
                 cash = cash + blotter[blotter['Action'] == 'Sell']['Money In/Out'].sum()
                 print('\nBlotter\n')
                 print(blotter)
@@ -313,13 +305,14 @@ while done:
         print(blotter)             
    
     elif selected == 3:
-        if len(plt) == 0:
-            print('\nNo P and L yet\n')
-        if len(plt) > 0:
+        if plt.empty == False:
             plnum=+1
             print('\nP/L\n')
             pl_tot(symbol)
             print(plt)
+        else:
+            print('\nNo P and L yet\n')
+
         
     elif selected == 4:
         print('\nThanks')
@@ -327,3 +320,7 @@ while done:
         
     elif selected >4 or selected<1:
         print('\nPlease enter a valid choice')
+'''
+if __name__ == "__main__":
+    app.run(host='0.0.0.0') # host='0.0.0.0' needed for docker
+'''
