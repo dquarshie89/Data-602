@@ -1,12 +1,9 @@
-FROM python:alpine
 
-RUN apk update && apk upgrade && \
-    apk add --no-cache git
-
+FROM python:3.6
 WORKDIR /usr/src/app
-
 COPY requirements.txt ./
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
-RUN git clone https://github.com/jamiels/flask-trader /usr/src/app/flask-trader
+RUN git clone https://github.com/dquarshie89/Data-602 /usr/src/app/Data-602
 EXPOSE 5000
-CMD [ "python", "/usr/src/app/flask-trader/trader.py" ]
+CMD [ "python", "/usr/src/app/trader-web/trader.py" ]
