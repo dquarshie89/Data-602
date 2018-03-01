@@ -3,4 +3,4 @@ request
 pandas
 numpy
 datetime
-BeautifulSoup
+bs4
