@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime as dt
 import time 
+import json
 from bs4 import BeautifulSoup 
 
 tradenum=0
@@ -41,9 +42,24 @@ def display_menu(menu):
         print(str(menu.index(m) +1) + " - " + m)
 
 def get_quote(give_cur,rec_cur):
-    price = requests.get("https://min-api.cryptocompare.com/data/price?fsym="+give_cur+"&tsyms="+rec_cur)
+    price = requests.get("https://min-api.cryptocompare.com/data/pricemultifull?fsyms="+give_cur+"&tsyms="+rec_cur)
     price_data = price.json()
+    
+    price_data = price_data["RAW"]
+    price_data = json.dumps(price_data)
+    price_data = json.loads(price_data)
+    
+    price_data = price_data[give_cur]
+    price_data = json.dumps(price_data)
+    price_data = json.loads(price_data)
+    
     price_data = price_data[rec_cur]
+    price_data = json.dumps(price_data)
+    price_data = json.loads(price_data)
+    
+    price = price_data["PRICE"]
+    maxprice = price_data["HIGH24HOUR"]
+    minprice = price_data["LOW24HOUR"]
     
     history_data = requests.get("https://min-api.cryptocompare.com/data/histoday?fsym="+give_cur+"&tsym="+rec_cur+"&limit=100")
     history_data = history_data.json()
@@ -52,15 +68,22 @@ def get_quote(give_cur,rec_cur):
     time_close = hist_df[['time','close']].copy()
     plt.plot(hist_df['time'] ,hist_df['close'] )
     plt.gcf().autofmt_xdate()
+    plt.xlabel('Date')
+    plt.ylabel('Price')
+    plt.title('Price of '+give_cur+' in '+rec_cur+' over 100 Days')
     plt.show(block=True)
     
+    stdprice= round(np.std(hist_df['close']),2)
+    
+    
     if trade =='Buy':
-        blotter.loc[tradenum] = (['Buy', give_cur, float(shares), float(price_data), pd.to_datetime('now'), round(float(price_data)*float(shares),2)])
+        blotter.loc[tradenum] = (['Buy', give_cur, float(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
     if trade == 'Sell':
-        blotter.loc[tradenum] = (['Sell', give_cur, float(shares), float(price_data), pd.to_datetime('now'), round(float(price_data)*float(shares),2)])
-    print(price_data)
-
-
+        blotter.loc[tradenum] = (['Sell', give_cur, float(shares), float(price), pd.to_datetime('now'), round(float(price)*float(shares),2)])
+    print(price)
+    print(maxprice)
+    print(minprice)
+    print(stdprice)
     
 
 done = True
