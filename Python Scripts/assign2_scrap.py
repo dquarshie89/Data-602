@@ -23,7 +23,7 @@ cash = 10000000
 
 now = dt.datetime.now()
 
-menu = ['Trade','Show Blotter','Show P/L','Quit']
+menu = ['Crypto Info', 'Trade','Show Blotter','Show P/L','Quit']
 
 blotter = pd.DataFrame(columns=[
         'Action',
@@ -90,8 +90,8 @@ done = True
 
 while done:
     display_menu(menu)
-    selected = int(input('\nEnter your choice [1-4]: '))
-    if selected == 1:
+    selected = int(input('\nEnter your choice [1-5]: '))
+    if selected == 2:
         print('\nTrade Menu')
         trade = input('Buy or Sell?: ')
         if trade == 'Buy':
@@ -103,10 +103,10 @@ while done:
             #print(give_cur+" = $"+str(price_data)+"Shares:"+shares)
         
             
-    elif selected == 4:
+    elif selected == 5:
         print('\nThanks')
         done = False
         
-    elif selected >4 or selected<1:
+    elif selected >5 or selected<1:
         print('\nPlease enter a valid choice')
     
