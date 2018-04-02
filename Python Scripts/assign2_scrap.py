@@ -89,6 +89,18 @@ def get_graph(give_cur,rec_cur):
     plt.ylabel('Price')
     plt.title('Price of '+give_cur+' in '+rec_cur+' over 100 Days')
     plt.show(block=False)
+
+def mavg(give_cur,rec_cur):
+    quote = get_quote(give_cur,rec_cur)
+    ret = np.cumsum(quote[5].values.tolist(), dtype=float)
+    c = ret[20:] = ret[20:] - ret[:-20]
+    c = ret[20 - 1:] / 20
+    c = pd.DataFrame(c)
+    plt.plot(c,'r-')
+    plt.xlabel('Days')
+    plt.ylabel('Price')
+    plt.title('Moving 20 Day Avg Price of '+give_cur+' in '+rec_cur)
+    plt.show(block=False)
     
 def wavg(group, avg_name, weight_name):
     d = group[avg_name]
@@ -111,6 +123,7 @@ while done:
         give_cur = input('\nPick crypto to look up: ') 
         rec_cur = input('\nPick currency to receive: ') 
         get_graph(give_cur,rec_cur)
+        mavg(give_cur,rec_cur)
         q = get_quote(give_cur,rec_cur)
         print('\nCurrent Price: %s' %(q[0]))
         print('\nMax Price in the Last 24hrs: %s' %(q[1]))
