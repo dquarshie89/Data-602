@@ -47,10 +47,26 @@ blotter = pd.DataFrame(columns=[
         )
 
 #Make a data frame for the buy section of the session. This will be used to see the unrealized profit/loss
-
+plb = pd.DataFrame(columns=[
+        'Ticker',
+        'Current Market Price',
+        'Position',
+        'VWAP',
+        'UPL',
+        'RPL',
+        'As Of'
+        ])
 
 #Make a data frame for the sell section of the session. This will be used to see the realized profit/loss
-
+pls = pd.DataFrame(columns=[
+        'Ticker',
+        'Current Market Price',
+        'Position',
+        'VWAP',
+        'UPL',
+        'RPL',
+        'As Of'
+        ])
 
 #Used a merge between the buy and the sell to see both unrealized and realized profit/loss
 '''
@@ -115,6 +131,7 @@ def pl_buy(symbol):
         'VWAP',
         'UPL',
         'RPL',
+        'Total P/L',
         'As Of'
         ]
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
@@ -156,8 +173,8 @@ def pl_buy(symbol):
     url = float(pw['Market Price'])*float(pw['Position'])
     
     #Put ticker, unrealized profit/loss, and realized profit/loss as 0 in a data frame
-    url_profit = pd.DataFrame([[symbol,url,'0',pd.to_datetime('now')]])
-    url_profit.columns = ['Ticker', 'URL','RPL','As Of']
+    url_profit = pd.DataFrame([[symbol,url,'0', url, pd.to_datetime('now')]])
+    url_profit.columns = ['Ticker', 'URL','RPL', 'Total P/L','As Of']
     
     #Merge the price data frame with the unrealized profit/loss data frame
     pl_buy = pd.merge(pw, url_profit, on='Ticker')
@@ -165,13 +182,13 @@ def pl_buy(symbol):
     #Make a profit loss data frame 
     #plb = np.vstack((plb,pl_buy)) 
     plb = df(pl_buy)
-    plb.columns=['Ticker','Current Price','Position','VWAP','URL','RPL','As Of']
+    plb.columns=['Ticker','Current Price','Position','VWAP','URL','RPL', 'Total P/L', 'As Of']
     
     #Sort profit and loss by most to least and take the most recent line per ticker
     plb = plb.sort_values(by='As Of')
     plb = plb.drop_duplicates('Ticker', keep='last').values
     plb = df(plb)
-    plb.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','As Of']
+    plb.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL', 'Total P/L','As Of']
     return(plb)
 
 #Run the same function as pl_buy but makes a data frame with realized profit and loss and unrealized = 0
@@ -183,6 +200,7 @@ def pl_sell(symbol):
         'VWAP',
         'UPL',
         'RPL',
+        'Total P/L',
         'As Of'
         ]
     quote_page = 'https://finance.yahoo.com/quote/'+ symbol
@@ -194,40 +212,44 @@ def pl_sell(symbol):
     price = price_box.text
     price = price.replace(',', '')
     price = price.split('x', 1)[0]
-
+    
     price_buy = pd.DataFrame([[symbol,price]])
     price_buy.columns = ['Ticker', 'Market Price']
     
     position = blotter[blotter['Action'] == 'Sell'].groupby(['Ticker'])[['Shares']].sum() # use as dataframe and join to vwap 
-    position = pd.DataFrame(position).reset_index()
-    position.columns = ['Ticker', 'Position']
-    
-    wap = blotter.groupby('Ticker').apply(wavg, 'Price per Share', 'Shares')
-    #Weighted avg could also be calculated with numpy using:
-    #wap = blotter.groupby(['Ticker']).apply(lambda x: np.average(x[['Price per Share']], weights=x[['Shares']]))
-    wap = pd.DataFrame(wap).reset_index()
-    wap.columns = ['Ticker', 'WAP']
-    
-    price_position = pd.merge(price_buy, position, on='Ticker')
-    
-    pw = pd.merge(price_position, wap, on='Ticker')
-    
-    rpl = (pw['Market Price'])*(pw['Position'])
-    
-    url_profit = pd.DataFrame([[symbol,'0',rpl,pd.to_datetime('now')]])
-    url_profit.columns = ['Ticker', 'URL','RPL','As Of']
-    
-    pl_sell = pd.merge(pw, url_profit, on='Ticker')
-     
-    #pls = np.vstack((pls,pl_sell)) 
-    pls = df(pl_sell)
-    pls.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','As Of']
-    
-    pls = pls.sort_values(by='As Of')
-    pls = pls.drop_duplicates('Ticker', keep='last').values
-    pls = df(pls)
-    pls.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','As Of']
-    return(pls)
+    if position.empty==True:
+        pls = pl_buy(symbol)
+        return(pls)
+    if position.empty==False:
+        position = pd.DataFrame(position).reset_index()
+        position.columns = ['Ticker', 'Position']
+        
+        wap = blotter.groupby('Ticker').apply(wavg, 'Price per Share', 'Shares')
+        #Weighted avg could also be calculated with numpy using:
+        #wap = blotter.groupby(['Ticker']).apply(lambda x: np.average(x[['Price per Share']], weights=x[['Shares']]))
+        wap = pd.DataFrame(wap).reset_index()
+        wap.columns = ['Ticker', 'WAP']
+        
+        price_position = pd.merge(price_buy, position, on='Ticker')
+        
+        pw = pd.merge(price_position, wap, on='Ticker')
+        
+        rpl = float(pw['Market Price'])*float(pw['Position']) 
+        
+        url_profit = pd.DataFrame([[symbol,'0',rpl, rpl, pd.to_datetime('now')]])
+        url_profit.columns = ['Ticker', 'URL','RPL','Total P/L', 'As Of']
+        
+        pl_sell = pd.merge(pw, url_profit, on='Ticker')
+         
+        #pls = np.vstack((pls,pl_sell)) 
+        pls = df(pl_sell)
+        pls.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L','As Of']
+        
+        pls = pls.sort_values(by='As Of')
+        pls = pls.drop_duplicates('Ticker', keep='last').values
+        pls = df(pls)
+        pls.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L','As Of']
+        return(pls)
 
 #Merge the pl_buy and pl_sell data frames to get the total unrealized and realized profit/loss
 def pl_tot(symbol):
@@ -250,13 +272,14 @@ def pl_tot(symbol):
                    float(plb['Position'])-float(pls['Position']),
                    float(plb['VWAP']), 
                    float(plb['URL'])-float(pls['RPL']),
-                   float(pls['RPL'])
+                   float(pls['RPL']),
+                   float(plb['URL'])+float(pls['RPL'])
                    ]])
-        pltot.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL']
+        pltot.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L']
         return(pltot)
     #If the ticker has not been sold then use the plb as the totl profit/loss 
     elif (symbol in pls[['Ticker']].values) ==False and (symbol in plb[['Ticker']].values) ==True:
-        pltot = plb[['Ticker','Current Market Price', 'Position', 'VWAP', 'URL', 'RPL']]
+        pltot = plb[['Ticker','Current Market Price', 'Position', 'VWAP', 'URL', 'RPL','Total P/L']]
         return(pltot)
 
 #Start program
@@ -297,7 +320,7 @@ while done:
                 get_quote(symbol)
                 #Add the buy to the profit/loss
                 pl_buy(symbol)
-                pl_tot(symbol)
+                #pl_tot(symbol)
                 #Remove the total buy from the user's cash
                 cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 print('\nBlotter\n')
@@ -321,20 +344,18 @@ while done:
             price = price.split('x', 1)[0]
             total_price = float(price)*float(shares)
             sell_confirm = input('\nSell %s shares of %s at $%s for $%s? (Y/N): ' % (shares, symbol, price, round(total_price,2)))
+            
             if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
                 tradenum += 1
                 get_quote(symbol)
                 #Add the sell to the profit/loss
+                pl_buy(symbol)
                 pl_sell(symbol)
                 cash = cash + blotter[blotter['Action'] == 'Sell']['Money In/Out'].sum()
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
                 print(cash)
-
-            if sell_confirm == 'Y' and (symbol in plb[['Ticker']].values)==False:
-                #Checks to see if there is any of the ticker to sell
-                print('\nThere is no %s to sell\n' % (symbol))
             if sell_confirm == 'N':
                 print('\nDid not sell %s' %(symbol))
     
@@ -365,3 +386,8 @@ while done:
         #Only allow users to eneter between 1 and 4
         print('\nPlease enter a valid choice')
 
+'''
+            if sell_confirm == 'Y' and (symbol in plb[['Ticker']].values)==False:
+                #Checks to see if there is any of the ticker to sell
+                print('\nThere is no %s to sell\n' % (symbol))
+'''
