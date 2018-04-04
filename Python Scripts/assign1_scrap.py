@@ -13,8 +13,6 @@ import numpy as np
 import datetime as dt
 from bs4 import BeautifulSoup
 
-
-
 #Initialize tradenum to count the number of trades made (Buy or Sell) during the session 
 #Will be used to place trades in the blotter
 tradenum=0
@@ -218,7 +216,7 @@ def pl_sell(symbol):
     
     position = blotter[blotter['Action'] == 'Sell'].groupby(['Ticker'])[['Shares']].sum() # use as dataframe and join to vwap 
     if position.empty==True:
-        pls = pl_buy(symbol)
+        pls = plb
         return(pls)
     if position.empty==False:
         position = pd.DataFrame(position).reset_index()
@@ -236,7 +234,7 @@ def pl_sell(symbol):
         
         rpl = float(pw['Market Price'])*float(pw['Position']) 
         
-        url_profit = pd.DataFrame([[symbol,'0',rpl, rpl, pd.to_datetime('now')]])
+        url_profit = pd.DataFrame([[symbol,'0',rpl, '0', pd.to_datetime('now')]])
         url_profit.columns = ['Ticker', 'URL','RPL','Total P/L', 'As Of']
         
         pl_sell = pd.merge(pw, url_profit, on='Ticker')
@@ -265,8 +263,9 @@ def pl_tot(symbol):
     price = price.replace(',', '')
     price = price.split('x', 1)[0]
     
+    
     #Check if the ticker has been sold and calculate the URL and RPL
-    if (symbol in plb[['Ticker']].values) == True and (symbol in pls[['Ticker']].values) ==True:
+    if (symbol in plb[['Ticker']].values) == True and (symbol in pls[['Ticker']].values) ==True:   
         pltot = df([[symbol, 
                    price, 
                    float(plb['Position'])-float(pls['Position']),
@@ -326,7 +325,7 @@ while done:
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
-                print(cash)
+                print(round(cash,2))
 
             if buy_confirm == 'N':
                 print('\nDid not buy %s' %(symbol))
@@ -349,13 +348,13 @@ while done:
                 tradenum += 1
                 get_quote(symbol)
                 #Add the sell to the profit/loss
-                pl_buy(symbol)
+                #pl_buy(symbol)
                 pl_sell(symbol)
                 cash = cash + blotter[blotter['Action'] == 'Sell']['Money In/Out'].sum()
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
-                print(cash)
+                print(round(cash,2))
             if sell_confirm == 'N':
                 print('\nDid not sell %s' %(symbol))
     
@@ -365,13 +364,16 @@ while done:
         print(blotter)             
    
     elif selected == 3:
-        pltot = pl_tot(symbol)
         if pltot.empty == False:
             #Run the P/L
             plnum=+1
+            pltot = pl_tot(symbol)
+            x = pltot['Position'].sum() / pltot['Position']
+            prctshare = pd.DataFrame([[symbol,x]])
+            prctshare.columns = ['Ticker', '% of Total Shares']
+            pltot = pd.merge(pltot, prctshare, on='Ticker')
             print('\nP/L\n')
-            x=pl_tot(symbol)
-            print(x)
+            print(pltot)
         else:
             #If there's nothing in the P/L 
             print('\nNo P and L yet\n')
