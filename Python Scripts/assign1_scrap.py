@@ -67,7 +67,7 @@ pls = pd.DataFrame(columns=[
         ])
 
 #Used a merge between the buy and the sell to see both unrealized and realized profit/loss
-'''
+
 pltot = pd.DataFrame(columns=[
         'Ticker',
         'Current Market Price',
@@ -75,8 +75,10 @@ pltot = pd.DataFrame(columns=[
         'VWAP',
         'UPL',
         'RPL',
+        'Total P/L',
+        '%'
         ])
-'''
+
 
 #Function to number the menu items 1-4 and display them
 def display_menu(menu):
@@ -232,7 +234,7 @@ def pl_sell(symbol):
         
         pw = pd.merge(price_position, wap, on='Ticker')
         
-        rpl = float(pw['Market Price'])*float(pw['Position']) 
+        rpl = (pw['Market Price'])*(pw['Position']) 
         
         url_profit = pd.DataFrame([[symbol,'0',rpl, '0', pd.to_datetime('now')]])
         url_profit.columns = ['Ticker', 'URL','RPL','Total P/L', 'As Of']
@@ -265,20 +267,34 @@ def pl_tot(symbol):
     
     
     #Check if the ticker has been sold and calculate the URL and RPL
-    if (symbol in plb[['Ticker']].values) == True and (symbol in pls[['Ticker']].values) ==True:   
-        pltot = df([[symbol, 
+    if (symbol in plb[['Ticker']].values) == True and (symbol in pls[['Ticker']].values) ==True: 
+  
+        pltotal = df([[symbol, 
                    price, 
                    float(plb['Position'])-float(pls['Position']),
                    float(plb['VWAP']), 
                    float(plb['URL'])-float(pls['RPL']),
                    float(pls['RPL']),
-                   float(plb['URL'])+float(pls['RPL'])
+                   float(plb['URL'])+float(pls['RPL'])              
                    ]])
-        pltot.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L']
+        pltotal.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L']
+        
+        prct = blotter.groupby(['Ticker']).agg({'Shares': 'sum'})/blotter.agg({'Shares': 'sum'})
+        prctshare = pd.DataFrame([[symbol,prct]])
+        prctshare.columns = ['Ticker', '% of Total Shares']
+        pltotal = pd.merge(pltotal, prctshare, on='Ticker')
+        pltotal.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L','%']
+        pltot.loc[plnum] = pltotal
         return(pltot)
     #If the ticker has not been sold then use the plb as the totl profit/loss 
     elif (symbol in pls[['Ticker']].values) ==False and (symbol in plb[['Ticker']].values) ==True:
-        pltot = plb[['Ticker','Current Market Price', 'Position', 'VWAP', 'URL', 'RPL','Total P/L']]
+        prct = blotter.groupby(['Ticker']).agg({'Shares': 'sum'})/blotter.agg({'Shares': 'sum'})
+        prctshare = pd.DataFrame([[symbol,prct]])
+        prctshare.columns = ['Ticker', '% of Total Shares']
+        plbt = plb[['Ticker','Current Market Price', 'Position', 'VWAP', 'URL', 'RPL','Total P/L']]
+        pltotal = pd.merge(plbt, prctshare, on='Ticker')
+        pltotal.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L','%']
+        pltot.loc[plnum] = pltotal
         return(pltot)
 
 #Start program
@@ -315,11 +331,13 @@ while done:
                 print(cash)
             if buy_confirm == 'Y' and total_price <= cash:
                 tradenum += 1
+                #plnum += 1
                 #Add the buy to the blotter
                 get_quote(symbol)
                 #Add the buy to the profit/loss
                 pl_buy(symbol)
-                #pl_tot(symbol)
+                #pl_sell(symbol)
+                pl_tot(symbol)
                 #Remove the total buy from the user's cash
                 cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 print('\nBlotter\n')
@@ -346,6 +364,7 @@ while done:
             
             if sell_confirm == 'Y' and (symbol in blotter[['Ticker']].values)==True:
                 tradenum += 1
+                #plnum += 1
                 get_quote(symbol)
                 #Add the sell to the profit/loss
                 #pl_buy(symbol)
@@ -364,17 +383,14 @@ while done:
         print(blotter)             
    
     elif selected == 3:
-        if pltot.empty == False:
+        pl_tot(symbol)
+        try:
+        #if pltot.empty == False:
             #Run the P/L
             plnum=+1
-            pltot = pl_tot(symbol)
-            x = pltot['Position'].sum() / pltot['Position']
-            prctshare = pd.DataFrame([[symbol,x]])
-            prctshare.columns = ['Ticker', '% of Total Shares']
-            pltot = pd.merge(pltot, prctshare, on='Ticker')
             print('\nP/L\n')
             print(pltot)
-        else:
+        except ValueError:
             #If there's nothing in the P/L 
             print('\nNo P and L yet\n')
 
