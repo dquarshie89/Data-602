@@ -44,7 +44,7 @@ plb = pd.DataFrame(columns=[
         'Current Market Price',
         'Position',
         'VWAP',
-        'UPL',
+        'URL',
         'RPL',
         'Total P/L',
         'As Of'
@@ -55,7 +55,7 @@ pls = pd.DataFrame(columns=[
         'Current Market Price',
         'Position',
         'VWAP',
-        'UPL',
+        'URL',
         'RPL',
         'Total P/L',
         'As Of'
@@ -217,8 +217,8 @@ def pl_sell(give_cur,rec_cur):
     
     position = blotter[blotter['Action'] == 'Sell'].groupby(['Currency'])[['Quantity']].sum() # use as dataframe and join to vwap 
     if position.empty==True:
-        pls2 = ([[give_cur, quote[0], 0, 0, 0,0,0,pd.to_datetime('now')]])
-        pls2 = df(pls2)
+        pls2 = df([[give_cur, get_quote(give_cur,rec_cur)[0], 0, 0, 0,0,0,pd.to_datetime('now')]])
+        #pls2 = df(pls2)
         pls2.columns=['Ticker','Current Market Price','Position','VWAP','URL','RPL','Total P/L','As Of']
         pls = pls.append(pls2)
         return(pls)
@@ -263,8 +263,8 @@ def pl_sell(give_cur,rec_cur):
 #Merge the pl_buy and pl_sell data frames to get the total unrealized and realized profit/loss
 def pl_tot(give_cur,rec_cur):
     quote = get_quote(give_cur,rec_cur)
-    plb = pl_buy(give_cur,rec_cur)
-    pls = pl_sell(give_cur,rec_cur)
+    #plb = pl_buy(give_cur,rec_cur)
+    #pls = pl_sell(give_cur,rec_cur)
     pltot = pd.DataFrame(columns=[
             'Ticker',
             'Current Market Price',
