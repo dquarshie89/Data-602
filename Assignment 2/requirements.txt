@@ -1,0 +1,8 @@
+request 
+pandas
+numpy
+datetime
+matplotlib
+json 
+bson
+pymongo
