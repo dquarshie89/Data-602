@@ -8,6 +8,8 @@ Created on Mon Mar 26 10:47:29 2018
 import requests
 import pandas as pd
 from pandas import DataFrame as df
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime as dt
