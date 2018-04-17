@@ -111,15 +111,16 @@ def wavg(group, avg_name, weight_name):
     except ZeroDivisionError:
         return d.mean()
     
-def update_pl(pl,pair,qty,price):
-    if qty > 0: # buy
-        current_qty = pl.at[pair,'Position']
-        current_vwap = pl.at[pair,'VWAP']
-        new_vwap = calc_vwap(current_qty,current_vwap,qty,price)
-        pl.at[pair,'Position'] = current_qty + qty
-        pl.at[pair,'VWAP'] = new_vwap
-        # TODO Recalc UPL
-    elif qty < 0: #sell
+def update_pl(pl, shares):
+    if trade =='Buy': # buy
+        x = get_quote(give_cur,rec_cur)
+        current_qty = pl.at[give_cur,'Position']
+        current_vwap = pl.at[give_cur,'VWAP']
+        new_vwap = blotter.groupby('Bought Currency').apply(wavg, 'Price per Share', 'Quantity')
+        pl.at[give_cur,'Position'] = current_qty + shares
+        pl.at[give_cur,'VWAP'] = new_vwap
+        pl.at[give_cur,'UPL'] = float(x[1])*float(shares)
+    elif trade =='Sell': #sell
         # TODO recalc UPL, RPL, position
         print("Insert code handling a sale - recalc UPL,RPL & position")    
 
@@ -130,9 +131,9 @@ def view_pl(df_pl):
     print()
 
 def initialize_pl(give_cur,rec_cur):
-    col_names = ['Bought Currency','Sold Currency','Position','VWAP','UPL','RPL']
+    col_names = ['Bought Currency','Position','VWAP','UPL','RPL']
     pl = pd.DataFrame(columns=col_names)
-    for p in give_cur:
+    for p in blotter['Bought Currency']:
         data = pd.DataFrame([[p,0,0,0,0]] ,columns=col_names)
         pl = pl.append(data, ignore_index=True)
     pl = pl.set_index('Bought Currency')
@@ -176,6 +177,13 @@ while done:
                 tradenum += 1
                 #Add the buy to the blotter
                 act = action(trade)
+                pl = initialize_pl(give_cur,rec_cur)
+                update_pl(pl, shares)
+                
+    if selected == 3:
+        view_pl(df_pl)
+        
+                
                 
 
     
