@@ -33,7 +33,7 @@ blotter = pd.DataFrame(columns=[
         'Cash']
         ) 
 '''
-pl = pd.DataFrame(columns=[
+df_pl = pd.DataFrame(columns=[
     'Bought Currency',
     'Current Market Price',
     'Position',
@@ -164,18 +164,20 @@ def wavg(group, avg_name, weight_name):
     except ZeroDivisionError:
         return d.mean()
 
-def view_pl(pl):
-    #update_pl(pl, shares)
+def view_pl(df_pl):
+    #update_pl(df_pl, shares)
     print("P/L")
-    print(pl)
+    print(df_pl)
     #print()
 
 #df_pl=initialize_pl(give_cur,rec_cur)
  
 done = True   
+
 while done:
     #df_pl=initialize_pl(give_cur,rec_cur)
     display_menu(menu)
+    #df_pl=initialize_pl(give_cur,rec_cur)
     selected = int(input('\nEnter your choice [1-5]: '))
     if selected == 1:
         print('\nCrypto Info')
@@ -212,8 +214,8 @@ while done:
                 #Add the buy to the blotter
                 action(trade)
                 cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
-                df_pl=initialize_pl(give_cur,rec_cur)
-                update_pl(df_pl, shares)
+                #df_pl=initialize_pl(give_cur,rec_cur)
+                #update_pl(df_pl, shares)
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
@@ -231,8 +233,8 @@ while done:
                 tradenum += 1
                 action(trade)
                 cash = cash + blotter[blotter['Action'] == 'Sell']['Money In/Out'].sum()
-                df_pl=initialize_pl(give_cur,rec_cur)
-                update_pl(df_pl, shares)
+                #df_pl=initialize_pl(give_cur,rec_cur)
+                #update_pl(df_pl, shares)
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
@@ -244,6 +246,8 @@ while done:
         print(blotter) 
     
     elif selected == 4:  
+        df_pl=initialize_pl(give_cur,rec_cur)
+        update_pl(df_pl, shares)
         view_pl(df_pl)
 
     elif selected == 5:
@@ -258,10 +262,3 @@ while done:
 #db = client.blotter_database
 #collection = db.blotter_collection
 #trades = db.trades
-
-
-
-
-
-
-
