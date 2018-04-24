@@ -32,6 +32,13 @@ blotter = pd.DataFrame(columns=[
         'Money In/Out',
         'Cash']
         ) 
+
+col_names = ['Bought Currency','Current Market Price','Position','VWAP','UPL','RPL','Total P/L','% of Total Shares']
+pl =pd.DataFrame([['BTC',0,0,0,0,0,0,0]] ,columns=col_names)
+eth =pd.DataFrame([['ETH',0,0,0,0,0,0,0]] ,columns=col_names)
+pl = pl.append(eth, ignore_index=True)
+pl = pl.set_index('Bought Currency')
+
 '''
 df_pl = pd.DataFrame(columns=[
     'Bought Currency',
@@ -90,18 +97,6 @@ def action(trade):
     if trade == 'Sell':
         blotter.loc[tradenum] = (['Sell', give_cur, rec_cur, float(shares), float(x[1]), pd.to_datetime('now'), round(float(x[1])*float(shares),2),cash+round(float(x[1])*float(shares),2)])
 
-
-def initialize_pl(give_cur,rec_cur):
-    col_names = ['Bought Currency','Current Market Price','Position','VWAP','UPL','RPL','Total P/L','% of Total Shares']
-    pl = pd.DataFrame(columns=col_names)
-    for p in blotter['Bought Currency']:
-        data = pd.DataFrame([[p,0,0,0,0,0,0,0]] ,columns=col_names)
-        pl = pl.append(data, ignore_index=True)
-    pl = pl.set_index('Bought Currency')
-    return pl 
-
-#pl=initialize_pl(give_cur,rec_cur)
-
 def update_pl(pl, shares):
     if trade =='Buy': 
         x = get_quote(give_cur,rec_cur)
@@ -111,12 +106,17 @@ def update_pl(pl, shares):
         pl.at[give_cur,'Position'] = current_qty + shares
         pl.at[give_cur,'VWAP'] = round(new_vwap[0],2)
         pl.at[give_cur,'UPL'] = float(x[1])*float(shares)
-        pl.at[give_cur,'Current Market Price'] =x[1]
+        pl.at[give_cur,'Current Market Price'] =float(x[1])
         pl.at[give_cur,'Total P/L']=pl.at[give_cur,'UPL']+pl.at[give_cur,'RPL']
+        #cur_group = pl.groupby(['Bought Currency']).agg({'Position': 'sum'})
+        #pos_pcts = cur_group.groupby(level=['Bought Currency']).apply(lambda x: 100 * x / float(x.sum()))
+        #pos_pcts = pd.DataFrame(pos_pcts).reset_index()
+        #pos_pcts.set_index('Bought Currency')
+        #pl.at[give_cur,'% of Total Shares']=pos_pcts[give_cur,'Position']
         pos_per = pl.groupby(['Bought Currency']).agg({'Position': 'sum'})/pl.agg({'Position': 'sum'})
-        pos_per = pd.DataFrame(pos_per).reset_index()
-        pos_per.columns = ['Ticker', '% of Total PL']
-        pl.at[give_cur,'% of Total Shares']=pos_per[['% of Total PL']]
+        #pos_per = pd.DataFrame(pos_per).reset_index()
+        #pos_per.columns = ['Bought Currency', '% of Total PL']
+        pl.at[give_cur,'% of Total Shares']=pos_per.at[give_cur,'Position']
     elif trade =='Sell': 
         x = get_quote(give_cur,rec_cur)
         current_qty = pl.at[give_cur,'Position']
@@ -125,19 +125,22 @@ def update_pl(pl, shares):
         pl.at[give_cur,'Position'] = current_qty - shares
         pl.at[give_cur,'VWAP'] = round(new_vwap[0],2)
         pl.at[give_cur,'RPL'] = float(x[1])*float(shares)
-        pl.at[give_cur,'Current Market Price'] =x[1]
+        pl.at[give_cur,'Current Market Price'] =float(x[1])
         pl.at[give_cur,'UPL'] = current_upl - (float(x[1])*float(shares))
         pl.at[give_cur,'Total P/L']=pl.at[give_cur,'UPL']+pl.at[give_cur,'RPL']
+        #cur_group = pl.groupby(['Bought Currency']).agg({'Position': 'sum'})
+        #pos_pcts = cur_group.groupby(level=['Bought Currency']).apply(lambda x: 100 * x / float(x.sum()))
+        #pl.at[give_cur,'% of Total Shares']=pos_pcts[give_cur,'Position']
         pos_per = pl.groupby(['Bought Currency']).agg({'Position': 'sum'})/pl.agg({'Position': 'sum'})
-        pos_per = pd.DataFrame(pos_per).reset_index()
-        pos_per.columns = ['Ticker', '% of Total PL']
-        pl.at[give_cur,'% of Total Shares']=pos_per[['% of Total PL']]
+        #pos_per = pd.DataFrame(pos_per).reset_index()
+        #pos_per.columns = ['Ticker', '% of Total PL']
+        pl.at[give_cur,'% of Total Shares']=pos_per.at[give_cur,'Position']
     return pl
 
 
 def get_graph(give_cur,rec_cur):  
     quote = get_quote(give_cur,rec_cur)
-    plt.plot(quote[5] ,quote[6] )
+    plt.plot(quote[5] ,quote[6])
     plt.gcf().autofmt_xdate()
     plt.xlabel('Date')
     plt.ylabel('Price')
@@ -164,13 +167,12 @@ def wavg(group, avg_name, weight_name):
     except ZeroDivisionError:
         return d.mean()
 
-def view_pl(df_pl):
-    #update_pl(df_pl, shares)
+def view_pl(pl):
     print("P/L")
-    print(df_pl)
+    print(pl)
     #print()
 
-#df_pl=initialize_pl(give_cur,rec_cur)
+
  
 done = True   
 
@@ -215,7 +217,7 @@ while done:
                 action(trade)
                 cash = cash - blotter[blotter['Action'] == 'Buy']['Money In/Out'].sum()
                 #df_pl=initialize_pl(give_cur,rec_cur)
-                #update_pl(df_pl, shares)
+                update_pl(pl, shares)
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
@@ -234,7 +236,7 @@ while done:
                 action(trade)
                 cash = cash + blotter[blotter['Action'] == 'Sell']['Money In/Out'].sum()
                 #df_pl=initialize_pl(give_cur,rec_cur)
-                #update_pl(df_pl, shares)
+                update_pl(pl, shares)
                 print('\nBlotter\n')
                 print(blotter)
                 print('\nRemaining Cash:\n')
@@ -246,9 +248,8 @@ while done:
         print(blotter) 
     
     elif selected == 4:  
-        df_pl=initialize_pl(give_cur,rec_cur)
-        update_pl(df_pl, shares)
-        view_pl(df_pl)
+        #update_pl(pl, shares)
+        view_pl(pl)
 
     elif selected == 5:
         print('\nThanks')
