@@ -33,9 +33,10 @@ blotter = pd.DataFrame(columns=[
         'Cash']
         ) 
 
-col_names = ['Bought Currency','Current Market Price','Position','VWAP','UPL','RPL','Total P/L','% of Total Shares']
-pl =pd.DataFrame([['BTC',0,0,0,0,0,0,0]] ,columns=col_names)
-eth =pd.DataFrame([['ETH',0,0,0,0,0,0,0]] ,columns=col_names)
+col_names = ['Bought Currency','Current Market Price','Position','VWAP','UPL','RPL','Total P/L']
+             #,'% of Total Shares']
+pl =pd.DataFrame([['BTC',0,0,0,0,0,0]] ,columns=col_names)
+eth =pd.DataFrame([['ETH',0,0,0,0,0,0]] ,columns=col_names)
 pl = pl.append(eth, ignore_index=True)
 pl = pl.set_index('Bought Currency')
 
@@ -114,9 +115,12 @@ def update_pl(pl, shares):
         #pos_pcts.set_index('Bought Currency')
         #pl.at[give_cur,'% of Total Shares']=pos_pcts[give_cur,'Position']
         pos_per = pl.groupby(['Bought Currency']).agg({'Position': 'sum'})/pl.agg({'Position': 'sum'})
-        #pos_per = pd.DataFrame(pos_per).reset_index()
         #pos_per.columns = ['Bought Currency', '% of Total PL']
-        pl.at[give_cur,'% of Total Shares']=pos_per.at[give_cur,'Position']
+        #pos_per = pd.DataFrame(pos_per).reset_index()
+        pl = pl.merge(pl,pos_per,on='Bought Currency')
+        pl = pd.DataFrame(pl).reset_index()
+        pl.columns=['Bought Currency','Current Market Price','Position','VWAP','UPL','RPL','Total P/L','% Position']
+        #pl.at[give_cur,'% of Total Shares']=pos_per.at[give_cur,'Position']
     elif trade =='Sell': 
         x = get_quote(give_cur,rec_cur)
         current_qty = pl.at[give_cur,'Position']
