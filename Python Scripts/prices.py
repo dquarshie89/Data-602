@@ -39,7 +39,7 @@ eth_market_info['Volume'] = eth_market_info['Volume'].astype('int64')
 eth_market_info.columns = ['Date','eth_Open','eth_High','eth_Low','eth_Close','eth_Volume','eth_MarketCap']
 
 market_info = pd.merge(bitcoin_market_info,eth_market_info, on=['Date'])
-market_info = market_info[market_info['Date']>='2016-01-01']
+market_info = market_info[market_info['Date']>='2017-01-01']
 for coins in ['bt_', 'eth_']: 
     kwargs = { coins+'day_diff': lambda x: (x[coins+'Close']-x[coins+'Open'])/x[coins+'Open']}
     market_info = market_info.assign(**kwargs)
@@ -73,6 +73,12 @@ for i in range(len(test_set)-window_len):
     LSTM_test_inputs.append(temp_set)
 LSTM_test_outputs = (test_set['eth_Close'][window_len:].values/test_set['eth_Close'][:-window_len].values)-1
 
+LSTM_training_inputs = [np.array(LSTM_training_input) for LSTM_training_input in LSTM_training_inputs]
+LSTM_training_inputs = np.array(LSTM_training_inputs)
+
+LSTM_test_inputs = [np.array(LSTM_test_inputs) for LSTM_test_inputs in LSTM_test_inputs]
+LSTM_test_inputs = np.array(LSTM_test_inputs)
+
 def build_model(inputs, output_size, neurons, activ_func="linear",
                 dropout=0.25, loss="mae", optimizer="adam"):
     model = Sequential()
@@ -84,4 +90,15 @@ def build_model(inputs, output_size, neurons, activ_func="linear",
 
     model.compile(loss=loss, optimizer=optimizer)
     return model
+
+# random seed for reproducibility
+np.random.seed(202)
+# initialise model architecture
+eth_model = build_model(LSTM_training_inputs, output_size=1, neurons = 20)
+# model output is next price normalised to 10th previous closing price
+LSTM_training_outputs = (training_set['eth_Close'][window_len:].values/training_set['eth_Close'][:-window_len].values)-1
+# train model on data
+# note: eth_history contains information on the training error per epoch
+eth_history = eth_model.fit(LSTM_training_inputs, LSTM_training_outputs, 
+                            epochs=1, batch_size=1, verbose=2, shuffle=True)
 
