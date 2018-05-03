@@ -128,9 +128,14 @@ def update_pl(pl, shares):
 
 def pl_pct(pl):
     pos_pcts = pl.groupby(['Bought Currency']).agg({'Position': 'sum'})/pl.agg({'Position': 'sum'})
-    #pos_pcts = pd.DataFrame(pos_pcts).reset_index()
-    pos_pcts.columns = ['% of Total PL']
-    return pos_pcts
+    pos_pcts = pd.DataFrame(pos_pcts).reset_index()
+    pos_pcts.columns = ['Bought Currency','% of Total Shares']
+    pl_pcts = pl.groupby(['Bought Currency']).agg({'Total P/L': 'sum'})/pl.agg({'Total P/L': 'sum'})
+    pl_pcts= pl_pcts.reset_index()
+    pl_pcts.columns = ['Bought Currency','% of Total P/L']
+    pcts = pd.merge(pos_pcts,pl_pcts,on='Bought Currency')
+    return pcts
+    # pos_pcts, pl_pcts
     
 
 def get_graph(give_cur,rec_cur):  
@@ -162,10 +167,10 @@ def wavg(group, avg_name, weight_name):
     except ZeroDivisionError:
         return d.mean()
 
-def view_pl(pl,pos_pcts):
+def view_pl(pl,pcts):
     print("P/L")
     print(pl)
-    print(pos_pcts)
+    print(pcts)
     #print()
 
 
@@ -246,8 +251,8 @@ while done:
         print(blotter) 
     
     elif selected == 4:  
-        pos_pcts=pl_pct(pl)
-        view_pl(pl,pos_pcts)
+        pcts=pl_pct(pl)
+        view_pl(pl,pcts)
 
     elif selected == 5:
         print('\nThanks')
